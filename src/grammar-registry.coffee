@@ -2,7 +2,7 @@ _ = require 'underscore-plus'
 CSON = require 'season'
 {Emitter, Disposable} = require 'event-kit'
 
-Grammar = require './grammar'
+Grammar = require './grammar/grammar'
 NullGrammar = require './null-grammar'
 
 # Extended: Registry containing one or more grammars.

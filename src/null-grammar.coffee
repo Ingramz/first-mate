@@ -1,4 +1,4 @@
-Grammar = require './grammar'
+Grammar = require './grammar/grammar'
 
 # A grammar with no patterns that is always available from a {GrammarRegistry}
 # even when it is completely empty.

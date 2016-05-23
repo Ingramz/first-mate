@@ -1,7 +1,7 @@
 _ = require 'underscore-plus'
 
 Scanner = require './scanner'
-ScopeSelector = require './scope-selector'
+ScopeSelector = require '../scope-selector'
 
 module.exports =
 class Injections

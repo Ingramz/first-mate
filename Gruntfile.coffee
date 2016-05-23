@@ -6,7 +6,7 @@ module.exports = (grunt) ->
       glob_to_multiple:
         expand: true
         cwd: 'src'
-        src: ['*.coffee']
+        src: ['**/*.coffee']
         dest: 'lib'
         ext: '.js'
 
@@ -17,7 +17,7 @@ module.exports = (grunt) ->
         max_line_length:
           level: 'ignore'
 
-      src: ['src/*.coffee']
+      src: ['src/**/*.coffee']
       test: ['spec/*.coffee']
       gruntfile: ['Gruntfile.coffee']
       benchmark: ['benchmark/*.coffee']

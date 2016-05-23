@@ -8,7 +8,7 @@ fs = require 'fs-plus'
 Injections = require './injections'
 Pattern = require './pattern'
 Rule = require './rule'
-ScopeSelector = require './scope-selector'
+ScopeSelector = require '../scope-selector'
 
 # Extended: Grammar that tokenizes lines of text.
 #

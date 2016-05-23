@@ -1,4 +1,4 @@
 module.exports =
   ScopeSelector: require './scope-selector'
   GrammarRegistry: require './grammar-registry'
-  Grammar: require './grammar'
+  Grammar: require './grammar/grammar'
