@@ -1,7 +1,6 @@
 _ = require 'underscore-plus'
 CSON = require 'season'
 {Emitter, Disposable} = require 'event-kit'
-Grim = require 'grim'
 
 Grammar = require './grammar'
 NullGrammar = require './null-grammar'
@@ -221,18 +220,3 @@ class GrammarRegistry
           throw new Error("Expected popped scope to be #{expectedScopeName}, but it was #{poppedScopeName}")
 
     tokens
-
-if Grim.includeDeprecatedAPIs
-  EmitterMixin = require('emissary').Emitter
-  EmitterMixin.includeInto(GrammarRegistry)
-
-  GrammarRegistry::on = (eventName) ->
-    switch eventName
-      when 'grammar-added'
-        Grim.deprecate("Call GrammarRegistry::onDidAddGrammar instead")
-      when 'grammar-updated'
-        Grim.deprecate("Call GrammarRegistry::onDidUpdateGrammar instead")
-      else
-        Grim.deprecate("Call explicit event subscription methods instead")
-
-    EmitterMixin::on.apply(this, arguments)
