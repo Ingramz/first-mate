@@ -10,10 +10,11 @@ cssGrammar.maxTokensPerLine = Infinity
 
 tokenize = (grammar, content, lineCount) ->
   start = Date.now()
-  {tags} = grammar.tokenizeLines(content)
+  tokenizedLines = grammar.tokenizeLines(content)
   duration = Date.now() - start
-  tokenCount = 0
-  tokenCount++ for tag in tags when tag >= 0
+  tokenCount = tokenizedLines.reduce (sum, tokens) ->
+    sum + tokens.length
+  , 0
   tokensPerMillisecond = Math.round(tokenCount / duration)
   console.log "Generated #{tokenCount} tokens for #{lineCount} lines in #{duration}ms (#{tokensPerMillisecond} tokens/ms)"
 
