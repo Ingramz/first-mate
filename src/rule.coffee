@@ -63,28 +63,20 @@ class Rule
     if result = @scanInjections(ruleStack, lineWithNewline, position, firstLine)
       for injection in baseGrammar.injections.injections
         if injection.scanner is result.scanner
-          if injection.selector.getPrefix(@grammar.scopesFromStack(ruleStack)) is 'L'
+          if injection.selector.matchesBetween(@grammar.scopesFromStack(ruleStack), [])
             results.unshift(result)
-          else
-            # TODO: Prefixes can either be L, B, or R.
-            # R is assumed to mean "right", which is the default (add to end of stack).
-            # There's no documentation on B, however.
+          if injection.selector.matchesBetween([], @grammar.scopesFromStack(ruleStack))
             results.push(result)
 
-    scopes = null
     for injectionGrammar in @registry.injectionGrammars
       continue if injectionGrammar is @grammar
       continue if injectionGrammar is baseGrammar
-      scopes ?= @grammar.scopesFromStack(ruleStack)
-      if injectionGrammar.injectionSelector.matches(scopes)
+      if injectionGrammar.injectionSelector?
         scanner = injectionGrammar.getInitialRule().getScanner(injectionGrammar, position, firstLine)
         if result = scanner.findNextMatch(lineWithNewline, firstLine, position, @anchorPosition)
-          if injectionGrammar.injectionSelector.getPrefix(scopes) is 'L'
+          if injectionGrammar.injectionSelector.matchesBetween(@grammar.scopesFromStack(ruleStack), [])
             results.unshift(result)
-          else
-            # TODO: Prefixes can either be L, B, or R.
-            # R is assumed to mean "right", which is the default (add to end of stack).
-            # There's no documentation on B, however.
+          if injectionGrammar.injectionSelector.matchesBetween([], @grammar.scopesFromStack(ruleStack))
             results.push(result)
 
     if results.length > 1

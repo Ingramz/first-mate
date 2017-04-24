@@ -1,10 +1,8 @@
 class SegmentMatcher
   constructor: (segments) ->
-    @segment = segments[0].join('') + segments[1].join('')
+    @segment = segments
 
   matches: (scope) -> scope is @segment
-
-  getPrefix: (scope) ->
 
   toCssSelector: ->
     @segment.split('.').map((dotFragment) ->
@@ -20,8 +18,6 @@ class TrueMatcher
   constructor: ->
 
   matches: -> true
-
-  getPrefix: (scopes) ->
 
   toCssSelector: -> '*'
 
@@ -41,36 +37,16 @@ class ScopeMatcher
 
     true
 
-  getPrefix: (scope) ->
-    scopeSegments = scope.split('.')
-    return false if scopeSegments.length < @segments.length
-
-    for segment, index in @segments
-      if segment.matches(scopeSegments[index])
-        return segment.prefix if segment.prefix?
-
   toCssSelector: ->
     @segments.map((matcher) -> matcher.toCssSelector()).join('')
 
   toCssSyntaxSelector: ->
     @segments.map((matcher) -> matcher.toCssSyntaxSelector()).join('')
 
-class GroupMatcher
-  constructor: (prefix, selector) ->
-    @prefix = prefix?[0]
-    @selector = selector
-
-  matches: (scopes) -> @selector.matches(scopes)
-
-  getPrefix: (scopes) -> @prefix if @selector.matches(scopes)
-
-  toCssSelector: -> @selector.toCssSelector()
-
-  toCssSyntaxSelector: -> @selector.toCssSyntaxSelector()
-
 class PathMatcher
-  constructor: (prefix, first, others) ->
-    @prefix = prefix?[0]
+  constructor: (first, others, beginanc, endanc) ->
+    @beginanc = beginanc?
+    @endanc = endanc?
     @matchers = [first]
     @matchers.push(matcher[1]) for matcher in others
 
@@ -79,10 +55,13 @@ class PathMatcher
     matcher = @matchers[index]
     for scope in scopes
       matcher = @matchers[++index] if matcher.matches(scope)
+      console.log "no", scopes if index is 0 and @beginanc
+      console.dir @matchers, {depth: null} if index is 0 and @beginanc
+      return false if index is 0 and @beginanc
       return true unless matcher?
     false
 
-  getPrefix: (scopes) -> @prefix if @matches(scopes)
+  matchesBetween: (lhs, rhs) -> @matches(rhs)
 
   toCssSelector: ->
     @matchers.map((matcher) -> matcher.toCssSelector()).join(' ')
@@ -94,8 +73,7 @@ class OrMatcher
   constructor: (@left, @right) ->
 
   matches: (scopes) -> @left.matches(scopes) or @right.matches(scopes)
-
-  getPrefix: (scopes) -> @left.getPrefix(scopes) or @right.getPrefix(scopes)
+  matchesBetween: (lhs, rhs) -> @left.matchesBetween(lhs, rhs) or @right.matchesBetween(lhs, rhs)
 
   toCssSelector: -> "#{@left.toCssSelector()}, #{@right.toCssSelector()}"
 
@@ -105,8 +83,7 @@ class AndMatcher
   constructor: (@left, @right) ->
 
   matches: (scopes) -> @left.matches(scopes) and @right.matches(scopes)
-
-  getPrefix: (scopes) -> @left.getPrefix(scopes) if @left.matches(scopes) and @right.matches(scopes) # The right side can't have prefixes
+  matchesBetween: (lhs, rhs) -> @left.matchesBetween(lhs, rhs) and @right.matchesBetween(lhs, rhs)
 
   toCssSelector: ->
     if @right instanceof NegateMatcher
@@ -120,27 +97,46 @@ class AndMatcher
     else
       "#{@left.toCssSyntaxSelector()} #{@right.toCssSyntaxSelector()}"
 
+class FilterMatcher
+  constructor: (@filter, @matcher) ->
+
+  matches: (scopes) -> @matcher.matches(scopes)
+
+  matchesBetween: (lhs, rhs) ->
+    switch (@filter)
+      when 'L' then @matcher.matchesBetween(lhs, lhs)
+      when 'R' then @matcher.matchesBetween(rhs, rhs)
+      when 'B' then @matcher.matchesBetween(lhs, lhs) and @matcher.matchesBetween(rhs, rhs)
+
+  # FIXME
+  toCssSelector: -> ":not(#{@matcher.toCssSelector()})"
+
+  toCssSyntaxSelector: -> ":not(#{@matcher.toCssSyntaxSelector()})"
+
 class NegateMatcher
   constructor: (@matcher) ->
 
   matches: (scopes) -> not @matcher.matches(scopes)
 
-  getPrefix: (scopes) ->
+  matchesBetween: (lhs, rhs) -> not @matcher.matchesBetween(lhs, rhs)
 
   toCssSelector: -> ":not(#{@matcher.toCssSelector()})"
 
   toCssSyntaxSelector: -> ":not(#{@matcher.toCssSyntaxSelector()})"
 
 class CompositeMatcher
-  constructor: (left, operator, right) ->
-    switch operator
-      when '|' then @matcher = new OrMatcher(left, right)
-      when '&' then @matcher = new AndMatcher(left, right)
-      when '-' then @matcher = new AndMatcher(left, new NegateMatcher(right))
+  constructor: (left, right) ->
+    for r in right
+      operator = r[0]
+      switch operator
+        when '|' then left = new OrMatcher(left, r[2])
+        when '&' then left = new AndMatcher(left, r[2])
+        when '-' then left = new AndMatcher(left, new NegateMatcher(r[2]))
+    @matcher = left
 
   matches: (scopes) -> @matcher.matches(scopes)
 
-  getPrefix: (scopes) -> @matcher.getPrefix(scopes)
+  matchesBetween: (lhs, rhs) -> @matcher.matchesBetween(lhs, rhs)
 
   toCssSelector: -> @matcher.toCssSelector()
 
@@ -149,11 +145,11 @@ class CompositeMatcher
 module.exports = {
   AndMatcher
   CompositeMatcher
-  GroupMatcher
   NegateMatcher
   OrMatcher
   PathMatcher
   ScopeMatcher
   SegmentMatcher
   TrueMatcher
+  FilterMatcher
 }

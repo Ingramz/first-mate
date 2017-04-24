@@ -16,14 +16,10 @@ class ScopeSelector
     scopes = [scopes] if typeof scopes is 'string'
     @matcher.matches(scopes)
 
-  # Gets the prefix of this scope selector.
-  #
-  # scopes - An {Array} of {String}s or a single {String}.
-  #
-  # Returns a {String} if there is a prefix or undefined otherwise.
-  getPrefix: (scopes) ->
-    scopes = [scopes] if typeof scopes is 'string'
-    @matcher.getPrefix(scopes)
+  matchesBetween: (lhs, rhs) ->
+    lhs = [lhs] if typeof lhs is 'string'
+    rhs = [rhs] if typeof rhs is 'string'
+    @matcher.matchesBetween(lhs, rhs)
 
   # Convert this TextMate scope selector to a CSS selector.
   #
