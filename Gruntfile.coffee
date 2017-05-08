@@ -22,6 +22,14 @@ module.exports = (grunt) ->
       gruntfile: ['Gruntfile.coffee']
       benchmark: ['benchmark/*.coffee']
 
+    peg:
+      glob_to_multiple:
+        expand: true
+        cwd: 'src'
+        src: ['*.pegjs']
+        dest: 'lib'
+        ext: '.js'
+
     shell:
       test:
         command: 'node node_modules/jasmine-focused/bin/jasmine-focused --coffee --captureExceptions spec'
@@ -41,11 +49,13 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-shell')
   grunt.loadNpmTasks('grunt-coffeelint')
   grunt.loadNpmTasks('grunt-atomdoc')
+  grunt.loadNpmTasks('grunt-peg')
 
   grunt.registerTask 'clean', ->
+    require('rimraf').sync('lib')
     require('rimraf').sync('api.json')
 
   grunt.registerTask('lint', ['coffeelint'])
-  grunt.registerTask('default', ['coffee', 'lint'])
-  grunt.registerTask('prepublish', ['clean', 'coffee', 'lint', 'shell:update-atomdoc', 'atomdoc'])
+  grunt.registerTask('default', ['coffee', 'peg', 'lint'])
+  grunt.registerTask('prepublish', ['clean', 'coffee', 'peg', 'lint', 'shell:update-atomdoc', 'atomdoc'])
   grunt.registerTask('test', ['default', 'shell:test'])

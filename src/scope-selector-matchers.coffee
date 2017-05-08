@@ -47,27 +47,46 @@ class PathMatcher
   constructor: (first, others, beginanc, endanc) ->
     @beginanc = beginanc?
     @endanc = endanc?
-    @matchers = [first]
-    @matchers.push(matcher[1]) for matcher in others
+    @matchers = [{matcher: first, anchor: false}]
+    @matchers.push({matcher: matcher[1], anchor: matcher[0] != null}) for matcher in others
 
   matches: (scopes) ->
-    index = 0
-    matcher = @matchers[index]
-    for scope in scopes
-      matcher = @matchers[++index] if matcher.matches(scope)
-      console.log "no", scopes if index is 0 and @beginanc
-      console.dir @matchers, {depth: null} if index is 0 and @beginanc
-      return false if index is 0 and @beginanc
-      return true unless matcher?
-    false
+    node = scopes.length - 1
+    sel = @matchers.length - 1
+    btNode = null
+    btSelector = -1
+
+    if @endanc
+      while node >= 0 and (scopes[node].startsWith('attr.') or scopes[node].startsWith('dyn.'))
+        --node
+      btSelector = sel
+
+    while node >= 0 and sel != -1
+      isRedundantNonBOLMatch = @beginanc and node > 0 and sel == 0
+      if !isRedundantNonBOLMatch and @matchers[sel].matcher.matches(scopes[node])
+        if @matchers[sel].anchor
+          if btSelector == -1
+            btNode = node
+            btSelector = sel
+        else if btSelector != -1
+          btSelector = -1
+        --sel
+      else if btSelector != -1
+        if btNode is null or btNode < 0
+          break
+        node = btNode
+        sel = btSelector
+        btSelector = -1
+      --node
+    return sel == -1
 
   matchesBetween: (lhs, rhs) -> @matches(rhs)
 
   toCssSelector: ->
-    @matchers.map((matcher) -> matcher.toCssSelector()).join(' ')
+    @matchers.map((matcher) -> matcher.matcher.toCssSelector()).join(' ')
 
   toCssSyntaxSelector: ->
-    @matchers.map((matcher) -> matcher.toCssSyntaxSelector()).join(' ')
+    @matchers.map((matcher) -> matcher.matcher.toCssSyntaxSelector()).join(' ')
 
 class OrMatcher
   constructor: (@left, @right) ->
