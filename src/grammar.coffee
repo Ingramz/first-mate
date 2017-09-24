@@ -146,7 +146,7 @@ class Grammar
 
         # Unmatched text before next tags
         if position < tagsStart
-          if (_.last(tags) >= 0)
+          if _.last(tags) >= 0
             tags[tags.length - 1] += tagsStart - position
           else
             tags.push(tagsStart - position)
@@ -154,9 +154,9 @@ class Grammar
 
         for tag in nextTags
           lastElem = _.last(tags)
-          if (lastElem >= 0 and tag >= 0)
+          if lastElem >= 0 and tag >= 0
             tags[tags.length - 1] += tag
-          else if lastElem % 2 is -1 and lastElem - 1 is tag
+          else if tag % 2 is -1 and lastElem is tag - 1
             tags.pop()
           else
             tags.push(tag)
@@ -166,7 +166,7 @@ class Grammar
       else
         # Push filler token for unmatched text at end of line
         if position < line.length or line.length is 0
-          if (_.last(tags) >= 0)
+          if _.last(tags) >= 0
             tags[tags.length - 1] += line.length - position
           else
             tags.push(line.length - position)
@@ -190,7 +190,7 @@ class Grammar
                 tags.push(@endIdForScope(scopeName))
           else
             if position < line.length or (line.length is 0 and tags.length is 0)
-              if (_.last(tags) >= 0)
+              if _.last(tags) >= 0
                 tags[tags.length - 1] += line.length - position
               else
                 tags.push(line.length - position)
@@ -210,7 +210,7 @@ class Grammar
             ruleStack.pop()
             if _.last(tags) is @startIdForScope(lastRule.scopeName)
               tags.pop() # also pop the duplicated start scope if it was pushed
-            if (_.last(tags) >= 0)
+            if _.last(tags) >= 0
               tags[tags.length - 1] += line.length - position
             else
               tags.push(line.length - position)
