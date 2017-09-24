@@ -235,11 +235,10 @@ describe "Grammar tokenization", ->
         {line, tags} = grammar.tokenizeLine('%w|oh \\look|')
         tokens = registry.decodeTokens(line, tags)
 
-        expect(tokens.length).toBe 5
+        expect(tokens.length).toBe 3
         expect(tokens[0]).toEqual value: '%w|', scopes: ["source.ruby", "string.quoted.other.literal.lower.ruby", "punctuation.definition.string.begin.ruby"]
-        expect(tokens[1]).toEqual value: 'oh ', scopes: ["source.ruby", "string.quoted.other.literal.lower.ruby"]
-        expect(tokens[2]).toEqual value: '\\l', scopes: ["source.ruby", "string.quoted.other.literal.lower.ruby"]
-        expect(tokens[3]).toEqual value: 'ook', scopes: ["source.ruby", "string.quoted.other.literal.lower.ruby"]
+        expect(tokens[1]).toEqual value: 'oh \\look', scopes: ["source.ruby", "string.quoted.other.literal.lower.ruby"]
+        expect(tokens[2]).toEqual value: '|', scopes: ["source.ruby", "string.quoted.other.literal.lower.ruby", "punctuation.definition.string.end.ruby"]
 
     describe "when the line matches a begin/end pattern", ->
       it "returns tokens based on the beginCaptures, endCaptures and the child scope", ->
@@ -296,9 +295,9 @@ describe "Grammar tokenization", ->
             { some }excentricSyntax }
           """
 
-          expect(lines[1][2]).toEqual value: "}excentricSyntax", scopes: ['source.apply-end-pattern-last', 'end-pattern-last-env', 'scope', 'excentric']
-          expect(lines[4][2]).toEqual value: "}", scopes: ['source.apply-end-pattern-last', 'normal-env', 'scope']
-          expect(lines[4][3]).toEqual value: "excentricSyntax }", scopes: ['source.apply-end-pattern-last', 'normal-env']
+          expect(lines[1][1]).toEqual value: "}excentricSyntax", scopes: ['source.apply-end-pattern-last', 'end-pattern-last-env', 'scope', 'excentric']
+          expect(lines[4][0]).toEqual value: "{ some }", scopes: ['source.apply-end-pattern-last', 'normal-env', 'scope']
+          expect(lines[4][1]).toEqual value: "excentricSyntax }", scopes: ['source.apply-end-pattern-last', 'normal-env']
 
       describe "when the end pattern contains a back reference", ->
         it "constructs the end rule based on its back-references to captures in the begin rule", ->
@@ -432,10 +431,9 @@ describe "Grammar tokenization", ->
       expect(ruleStack.length).toBe 1
       expect(ruleStack[0].scopeName).toBe "source.imaginaryLanguage"
 
-      expect(tokens.length).toBe 3
+      expect(tokens.length).toBe 2
       expect(tokens[0].value).toBe "//"
       expect(tokens[1].value).toBe " a singleLineComment"
-      expect(tokens[2].value).toBe ""
 
     it "can parse multiline text using a grammar containing patterns with newlines", ->
       grammar = loadGrammarSync('multiline.cson')
@@ -523,7 +521,7 @@ describe "Grammar tokenization", ->
         grammar = registry.grammarForScopeName('source.css.scss')
         {line, tags} = grammar.tokenizeLine("@mixin x() { -moz-selector: whatever; }")
         tokens = registry.decodeTokens(line, tags)
-        expect(tokens[9]).toEqual value: "-moz-selector", scopes: ["source.css.scss", "meta.property-list.scss", "meta.property-name.scss"]
+        expect(tokens[8]).toEqual value: "-moz-selector", scopes: ["source.css.scss", "meta.property-list.scss", "meta.property-name.scss"]
 
     describe "when a line has more tokens than `maxTokensPerLine`", ->
       it "creates a final token with the remaining text and resets the ruleStack to match the begining of the line", ->
@@ -930,22 +928,18 @@ describe "Grammar tokenization", ->
         lines = grammar.tokenizeLines "import a\nimport b"
 
         line1 = lines[0]
-        expect(line1.length).toBe 3
+        expect(line1.length).toBe 2
         expect(line1[0].value).toEqual "import"
         expect(line1[0].scopes).toEqual ["source.python", "keyword.control.import.python"]
-        expect(line1[1].value).toEqual " "
+        expect(line1[1].value).toEqual " a"
         expect(line1[1].scopes).toEqual ["source.python"]
-        expect(line1[2].value).toEqual "a"
-        expect(line1[2].scopes).toEqual ["source.python"]
 
         line2 = lines[1]
-        expect(line2.length).toBe 3
+        expect(line2.length).toBe 2
         expect(line2[0].value).toEqual "import"
         expect(line2[0].scopes).toEqual ["source.python", "keyword.control.import.python"]
-        expect(line2[1].value).toEqual " "
+        expect(line2[1].value).toEqual " b"
         expect(line2[1].scopes).toEqual ["source.python"]
-        expect(line2[2].value).toEqual "b"
-        expect(line2[2].scopes).toEqual ["source.python"]
 
       it "closes all scopes opened when matching rules within a capture", ->
         grammar = registry.grammarForScopeName('source.python')

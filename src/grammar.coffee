@@ -146,17 +146,30 @@ class Grammar
 
         # Unmatched text before next tags
         if position < tagsStart
-          tags.push(tagsStart - position)
-          tokenCount++
+          if (_.last(tags) >= 0)
+            tags[tags.length - 1] += tagsStart - position
+          else
+            tags.push(tagsStart - position)
+            tokenCount++
 
-        tags.push(nextTags...)
-        tokenCount++ for tag in nextTags when tag >= 0
+        for tag in nextTags
+          lastElem = _.last(tags)
+          if (lastElem >= 0 and tag >= 0)
+            tags[tags.length - 1] += tag
+          else if lastElem % 2 is -1 and lastElem - 1 is tag
+            tags.pop()
+          else
+            tags.push(tag)
+            tokenCount++ if tag >= 0
+
         position = tagsEnd
-
       else
         # Push filler token for unmatched text at end of line
         if position < line.length or line.length is 0
-          tags.push(line.length - position)
+          if (_.last(tags) >= 0)
+            tags[tags.length - 1] += line.length - position
+          else
+            tags.push(line.length - position)
         break
 
       if position is previousPosition
@@ -164,11 +177,23 @@ class Grammar
           console.error("Popping rule because it loops at column #{position} of line '#{line}'", _.clone(ruleStack))
           if ruleStack.length > 1
             {scopeName, contentScopeName} = ruleStack.pop()
-            tags.push(@endIdForScope(contentScopeName)) if contentScopeName
-            tags.push(@endIdForScope(scopeName)) if scopeName
+            if contentScopeName
+              if _.last(tags) is @startIdForScope(contentScopeName)
+                tags.pop()
+              else
+                tags.push(@endIdForScope(contentScopeName))
+
+            if scopeName
+              if _.last(tags) is @startIdForScope(scopeName)
+                tags.pop()
+              else
+                tags.push(@endIdForScope(scopeName))
           else
             if position < line.length or (line.length is 0 and tags.length is 0)
-              tags.push(line.length - position)
+              if (_.last(tags) >= 0)
+                tags[tags.length - 1] += line.length - position
+              else
+                tags.push(line.length - position)
             break
         else if ruleStack.length > previousRuleStackLength # Stack size increased with zero length match
           [{rule: penultimateRule}, {rule: lastRule}] = ruleStack[-2..]
@@ -183,22 +208,32 @@ class Grammar
 
           if popStack
             ruleStack.pop()
-            lastSymbol = _.last(tags)
-            if lastSymbol < 0 and lastSymbol is @startIdForScope(lastRule.scopeName)
+            if _.last(tags) is @startIdForScope(lastRule.scopeName)
               tags.pop() # also pop the duplicated start scope if it was pushed
-            tags.push(line.length - position)
+            if (_.last(tags) >= 0)
+              tags[tags.length - 1] += line.length - position
+            else
+              tags.push(line.length - position)
             break
 
     if truncatedLine
-      tagCount = tags.length
-      if tags[tagCount - 1] > 0
-        tags[tagCount - 1] += inputLine.length - position
+      if _.last(tags) >= 0
+        tags[tags.length - 1] += inputLine.length - position
       else
         tags.push(inputLine.length - position)
       while ruleStack.length > initialRuleStackLength
         {scopeName, contentScopeName} = ruleStack.pop()
-        tags.push(@endIdForScope(contentScopeName)) if contentScopeName
-        tags.push(@endIdForScope(scopeName)) if scopeName
+        if contentScopeName
+          if _.last(tags) is @startIdForScope(contentScopeName)
+            tags.pop()
+          else
+            tags.push(@endIdForScope(contentScopeName))
+
+        if scopeName
+          if _.last(tags) is @startIdForScope(scopeName)
+            tags.pop()
+          else
+            tags.push(@endIdForScope(scopeName))
 
     rule.clearAnchorPosition() for {rule} in ruleStack
 
